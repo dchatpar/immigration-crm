@@ -9,7 +9,7 @@ remote_images = ["^(?:http(?:s)?:\\/\\/localhost(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\
 [functions."*"]
 
 [[plugins]]
-origin = "default"
+origin = "config"
 package = "@netlify/plugin-nextjs"
 
 [plugins.inputs]
