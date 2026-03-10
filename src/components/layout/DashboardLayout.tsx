@@ -11,14 +11,12 @@ import {
   Home,
   LogOut,
   Menu,
-  MessageSquare,
   Settings,
   Users,
   X,
   ChevronDown,
   User,
   Briefcase,
-  Shield,
   ClipboardList,
   BarChart3
 } from 'lucide-react'
@@ -59,19 +57,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Cases', href: '/dashboard/cases', icon: Briefcase },
     { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
     { name: 'Documents', href: '/dashboard/documents', icon: FileText },
-    { name: 'Communications', href: '/dashboard/communications', icon: MessageSquare },
-    { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
     { name: 'Workflows', href: '/dashboard/workflows', icon: ClipboardList },
   ]
 
   const adminNavigation = [
-    { name: 'Users', href: '/dashboard/admin/users', icon: Users },
-    { name: 'Settings', href: '/dashboard/admin/settings', icon: Settings },
-    { name: 'Audit Log', href: '/dashboard/admin/audit', icon: Shield },
+    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]
 
   const userNavigation = [
-    { name: 'Your Profile', href: '/dashboard/profile' },
     { name: 'Settings', href: '/dashboard/settings' },
     { name: 'Sign out', href: '#', onClick: handleSignOut },
   ]

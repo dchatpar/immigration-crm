@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/Button'
 import { Progress } from '@/components/ui/Progress'
 import { Calendar, FileText, Users, Clock, CheckCircle, AlertCircle, BarChart3, Activity } from 'lucide-react'
 import Link from 'next/link'
-import DashboardLayout from '@/components/layout/DashboardLayout'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -57,7 +56,7 @@ export default function DashboardPage() {
 
   const quickActions = [
     { title: 'New Lead', icon: Users, href: '/dashboard/leads/new', description: 'Add a new potential client' },
-    { title: 'New Case', icon: FileText, href: '/dashboard/cases/new', description: 'Start a new immigration case' },
+    { title: 'New Case', icon: FileText, href: '/dashboard/cases', description: 'Start a new immigration case' },
     { title: 'Upload Document', icon: CheckCircle, href: '/dashboard/documents', description: 'Upload client documents' },
     { title: 'Schedule', icon: Calendar, href: '/dashboard/appointments', description: 'Book an appointment' },
   ];
@@ -65,19 +64,17 @@ export default function DashboardPage() {
   // Show loading while checking authentication
   if (isChecking) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
-          </div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
-      </DashboardLayout>
+      </div>
     )
   }
 
   return (
-    <DashboardLayout>
+    <div>
       {/* Welcome Banner */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg mb-8">
         <div className="px-6 py-8">
@@ -193,7 +190,7 @@ export default function DashboardPage() {
                 ))}
               </div>
               <div className="mt-6">
-                <Link href="/dashboard/activity">
+                <Link href="/dashboard/analytics">
                   <Button className="w-full border border-input bg-background hover:bg-accent hover:text-accent-foreground">
                     View All Activity
                   </Button>
@@ -291,7 +288,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="mt-6">
-                <Link href="/dashboard/reports">
+                <Link href="/dashboard/analytics">
                   <div className="flex items-center text-sm text-blue-600 hover:text-blue-700">
                     <BarChart3 className="h-4 w-4 mr-2" />
                     View Detailed Reports
@@ -302,6 +299,6 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
-    </DashboardLayout >
+    </div >
   )
 }
