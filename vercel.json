@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron?job=reminders",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron?job=passport-expiry",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron?job=weekly-updates",
+      "schedule": "0 9 * * 1"
+    }
+  ]
+}
