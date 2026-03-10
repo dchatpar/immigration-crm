@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Progress } from '@/components/ui/Progress'
@@ -74,7 +75,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div>
+    <DashboardLayout>
+      <div>
       {/* Welcome Banner */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg mb-8">
         <div className="px-6 py-8">
@@ -300,5 +302,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div >
+    </DashboardLayout>
   )
 }
