@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import {
     FileText,
     Upload,
@@ -101,7 +100,7 @@ export default function DocumentsPage() {
     }
 
     return (
-        <DashboardLayout>
+        <>
             {/* Page Header */}
             <div className="mb-8">
                 <div className="flex items-center justify-between">
@@ -308,8 +307,8 @@ export default function DocumentsPage() {
                             </table>
                         </div>
                     )}
-                </CardContent>
-            </Card>
-        </DashboardLayout>
+                  </CardContent>
+              </Card>
+            </>
     )
 }

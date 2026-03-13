@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Switch } from '@/components/ui/Switch'
@@ -36,7 +35,7 @@ export default function AutomationSettingsPage() {
     }
 
     return (
-        <DashboardLayout>
+        <>
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Automation Settings</h1>
@@ -152,6 +151,6 @@ export default function AutomationSettingsPage() {
                     </CardContent>
                 </Card>
             </div>
-        </DashboardLayout>
+        </>
     )
 }

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import {
@@ -10,7 +9,8 @@ import {
     Clock,
     CheckCircle,
     XCircle,
-    Video
+    Video,
+    DollarSign
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -19,6 +19,7 @@ interface Appointment {
     title: string
     description?: string
     appointmentType: string
+    appointmentFee?: number
     status: string
     scheduledAt: number
     duration: number
@@ -32,12 +33,50 @@ interface Appointment {
     } | null
 }
 
+const APPOINTMENT_TYPES = {
+    SHORT_CONSULTATION: {
+        id: 'SHORT_CONSULTATION',
+        name: 'Short Consultation',
+        duration: 15,
+        fee: 85,
+        description: '15-minute initial assessment'
+    },
+    FULL_CONSULTATION: {
+        id: 'FULL_CONSULTATION', 
+        name: 'Full Consultation',
+        duration: 30,
+        fee: 185,
+        description: '30-minute comprehensive consultation'
+    },
+    DOCUMENT_REVIEW: {
+        id: 'DOCUMENT_REVIEW',
+        name: 'Document Review',
+        duration: 45,
+        fee: 150,
+        description: 'Review of immigration documents'
+    },
+    INTERVIEW_PREP: {
+        id: 'INTERVIEW_PREP',
+        name: 'Interview Preparation',
+        duration: 60,
+        fee: 200,
+        description: 'Mock interview and preparation'
+    },
+    FOLLOW_UP: {
+        id: 'FOLLOW_UP',
+        name: 'Follow-up Call',
+        duration: 15,
+        fee: 50,
+        description: 'Quick follow-up discussion'
+    }
+}
+
 const mockAppointments: Appointment[] = [
-    { _id: '1', title: 'Initial Consultation', appointmentType: 'consultation', status: 'SCHEDULED', scheduledAt: Date.now() + 86400000, duration: 60, location: 'Video Call', case: { id: '1', caseNumber: 'IMM-2026-001', clientFirstName: 'John', clientLastName: 'Smith' } },
-    { _id: '2', title: 'Document Review', appointmentType: 'document_review', status: 'SCHEDULED', scheduledAt: Date.now() + 172800000, duration: 45, location: 'Office - Room 2', case: { id: '2', caseNumber: 'IMM-2026-002', clientFirstName: 'Maria', clientLastName: 'Garcia' } },
-    { _id: '3', title: 'Interview Prep', appointmentType: 'interview_prep', status: 'SCHEDULED', scheduledAt: Date.now() + 259200000, duration: 90, location: 'Video Call', case: { id: '3', caseNumber: 'IMM-2026-003', clientFirstName: 'Ahmed', clientLastName: 'Hassan' } },
-    { _id: '4', title: 'Follow-up Call', appointmentType: 'follow_up', status: 'COMPLETED', scheduledAt: Date.now() - 86400000, duration: 30, location: 'Phone', case: { id: '4', caseNumber: 'IMM-2026-004', clientFirstName: 'Sarah', clientLastName: 'Johnson' } },
-    { _id: '5', title: 'Green Card Submission', appointmentType: 'submission', status: 'SCHEDULED', scheduledAt: Date.now() + 345600000, duration: 120, location: 'Office - Room 1', case: { id: '5', caseNumber: 'IMM-2026-005', clientFirstName: 'Carlos', clientLastName: 'Rodriguez' } },
+    { _id: '1', title: 'Short Consultation', appointmentType: 'SHORT_CONSULTATION', status: 'SCHEDULED', scheduledAt: Date.now() + 86400000, duration: 15, location: 'Video Call', case: { id: '1', caseNumber: 'IMM-2026-001', clientFirstName: 'John', clientLastName: 'Smith' } },
+    { _id: '2', title: 'Document Review', appointmentType: 'DOCUMENT_REVIEW', status: 'SCHEDULED', scheduledAt: Date.now() + 172800000, duration: 45, location: 'Office - Room 2', case: { id: '2', caseNumber: 'IMM-2026-002', clientFirstName: 'Maria', clientLastName: 'Garcia' } },
+    { _id: '3', title: 'Interview Prep', appointmentType: 'INTERVIEW_PREP', status: 'SCHEDULED', scheduledAt: Date.now() + 259200000, duration: 60, location: 'Video Call', case: { id: '3', caseNumber: 'IMM-2026-003', clientFirstName: 'Ahmed', clientLastName: 'Hassan' } },
+    { _id: '4', title: 'Follow-up Call', appointmentType: 'FOLLOW_UP', status: 'COMPLETED', scheduledAt: Date.now() - 86400000, duration: 15, location: 'Phone', case: { id: '4', caseNumber: 'IMM-2026-004', clientFirstName: 'Sarah', clientLastName: 'Johnson' } },
+    { _id: '5', title: 'Full Consultation', appointmentType: 'FULL_CONSULTATION', status: 'SCHEDULED', scheduledAt: Date.now() + 345600000, duration: 30, location: 'Office - Room 1', case: { id: '5', caseNumber: 'IMM-2026-005', clientFirstName: 'Carlos', clientLastName: 'Rodriguez' } },
 ]
 
 export default function AppointmentsPage() {
@@ -79,6 +118,16 @@ export default function AppointmentsPage() {
         }
     }
 
+    const getAppointmentFee = (type: string): number => {
+        const typeInfo = Object.values(APPOINTMENT_TYPES).find(t => t.id === type)
+        return typeInfo?.fee || 0
+    }
+
+    const getAppointmentDuration = (type: string): number => {
+        const typeInfo = Object.values(APPOINTMENT_TYPES).find(t => t.id === type)
+        return typeInfo?.duration || 0
+    }
+
     const formatDate = (date: number) => {
         const d = new Date(date)
         return d.toLocaleDateString('en-US', {
@@ -98,7 +147,7 @@ export default function AppointmentsPage() {
     }
 
     return (
-        <DashboardLayout>
+        <>
             <div className="mb-8">
                 <div className="flex items-center justify-between">
                     <div>
@@ -132,7 +181,7 @@ export default function AppointmentsPage() {
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
@@ -182,6 +231,17 @@ export default function AppointmentsPage() {
                         </div>
                     </CardContent>
                 </Card>
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-600">Est. Revenue</p>
+                                <p className="text-2xl font-bold text-green-600">${appointments.reduce((sum, a) => sum + getAppointmentFee(a.appointmentType), 0)}</p>
+                            </div>
+                            <DollarSign className="h-8 w-8 text-green-600" />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             <Card>
@@ -227,7 +287,11 @@ export default function AppointmentsPage() {
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <Clock className="h-4 w-4" />
-                                                        <span>{formatTime(appointment.scheduledAt)} ({appointment.duration} min)</span>
+                                                        <span>{formatTime(appointment.scheduledAt)} ({getAppointmentDuration(appointment.appointmentType) || appointment.duration} min)</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-green-700 font-medium">
+                                                        <DollarSign className="h-4 w-4" />
+                                                        <span>${getAppointmentFee(appointment.appointmentType)}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -244,6 +308,6 @@ export default function AppointmentsPage() {
                     )}
                 </CardContent>
             </Card>
-        </DashboardLayout>
+        </>
     )
 }

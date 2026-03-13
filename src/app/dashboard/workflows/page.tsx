@@ -1,6 +1,5 @@
 'use client'
 
-import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Plus, Trash2, Edit2, GitBranch } from 'lucide-react'
@@ -32,7 +31,7 @@ export default function WorkflowsPage() {
     }
 
     return (
-        <DashboardLayout>
+        <>
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Workflow Templates</h1>
@@ -81,6 +80,6 @@ export default function WorkflowsPage() {
                     </div>
                 )}
             </div>
-        </DashboardLayout>
-    )
+        </>
+    );
 }

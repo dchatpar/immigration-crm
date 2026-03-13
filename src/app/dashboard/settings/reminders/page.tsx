@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Bell, Plus, Trash2, Edit2, Clock } from 'lucide-react'
@@ -52,7 +51,7 @@ export default function ReminderRulesPage() {
     const [loading, setLoading] = useState(false)
 
     return (
-        <DashboardLayout>
+        <>
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Reminder Rules</h1>
@@ -100,6 +99,6 @@ export default function ReminderRulesPage() {
                     </Card>
                 ))}
             </div>
-        </DashboardLayout>
+        </>
     )
 }

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from "next-auth/react"
 import { useParams, useRouter } from 'next/navigation'
-import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -183,43 +182,39 @@ export default function LeadDetailPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-            <p className="mt-4 text-gray-600">Loading lead details...</p>
-          </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+          <p className="mt-4 text-gray-600">Loading lead details...</p>
         </div>
-      </DashboardLayout>
+      </div>
     )
   }
 
   if (!lead) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">Lead not found</h2>
-            <p className="mt-2 text-gray-600">
-              The lead you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.
-            </p>
-            <div className="mt-6">
-              <Link href="/dashboard/leads">
-                <Button>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Leads
-                </Button>
-              </Link>
-            </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+          <h2 className="mt-4 text-xl font-semibold text-gray-900">Lead not found</h2>
+          <p className="mt-2 text-gray-600">
+            The lead you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.
+          </p>
+          <div className="mt-6">
+            <Link href="/dashboard/leads">
+              <Button>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Leads
+              </Button>
+            </Link>
           </div>
         </div>
-      </DashboardLayout>
+      </div>
     )
   }
 
   return (
-    <DashboardLayout>
+    <>
       {/* Header */}
       <div className="mb-8">
         <Link href="/dashboard/leads">
@@ -618,6 +613,6 @@ export default function LeadDetailPage() {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
-  )
+    </>
+    )
 }

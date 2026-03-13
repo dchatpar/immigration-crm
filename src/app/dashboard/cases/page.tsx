@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -83,8 +82,8 @@ export default function CasesPage() {
     }
 
     return (
-        <DashboardLayout>
-            {/* Page Header */}
+    <>
+      {/* Page Header */}
             <div className="mb-8">
                 <div className="flex items-center justify-between">
                     <div>
@@ -267,8 +266,9 @@ export default function CasesPage() {
                             ))}
                         </div>
                     )}
-                </CardContent>
-            </Card>
-        </DashboardLayout>
-    )
-}
+                  </CardContent>
+              </Card>
+            </>
+
+        )
+    }

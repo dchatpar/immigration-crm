@@ -1,6 +1,5 @@
 'use client'
 
-import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import {
     Users, Briefcase, FileText, Calendar,
@@ -36,7 +35,7 @@ export default function AnalyticsPage() {
     }
 
     return (
-        <DashboardLayout>
+        <>
             <div className="space-y-8">
                 {/* Header */}
                 <div>
@@ -219,6 +218,6 @@ export default function AnalyticsPage() {
                     </CardContent>
                 </Card>
             </div>
-        </DashboardLayout>
-    )
+        </>
+    );
 }

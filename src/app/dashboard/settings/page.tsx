@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Save, RefreshCw, Settings as SettingsIcon } from 'lucide-react'
@@ -85,16 +84,14 @@ export default function SettingsPage() {
 
     if (loading) {
         return (
-            <DashboardLayout>
-                <div className="flex justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-            </DashboardLayout>
+            <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
         )
     }
 
     return (
-        <DashboardLayout>
+        <>
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">System Settings</h1>
@@ -152,6 +149,6 @@ export default function SettingsPage() {
                     </div>
                 )}
             </div>
-        </DashboardLayout>
+        </>
     )
 }

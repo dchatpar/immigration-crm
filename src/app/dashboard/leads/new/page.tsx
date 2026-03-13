@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -48,7 +47,7 @@ export default function NewLeadPage() {
   }
 
   return (
-    <DashboardLayout>
+    <>
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Create New Lead</h1>
@@ -229,9 +228,9 @@ export default function NewLeadPage() {
                 </Button>
               </div>
             </CardContent>
-          </Card>
-        </form>
-      </div>
-    </DashboardLayout>
+      </Card>
+    </form>
+  </div>
+    </>
   )
 }
