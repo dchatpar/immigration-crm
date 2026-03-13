@@ -1,0 +1,13 @@
+# Netlify configuration
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Next.js settings
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
