@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import ConvexClientProvider from '@/components/ConvexClientProvider'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -16,15 +15,37 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const convexDeployment = process.env.NEXT_PUBLIC_CONVEX_DEPLOYMENT
+  
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased`}>
         <ErrorBoundary>
-          <ConvexClientProvider>
-            {children}
-          </ConvexClientProvider>
+          {convexDeployment ? (
+            <ConvexWrapper deployment={convexDeployment}>
+              {children}
+            </ConvexWrapper>
+          ) : (
+            children
+          )}
         </ErrorBoundary>
       </body>
     </html>
   )
+}
+
+function ConvexWrapper({ 
+  children, 
+  deployment 
+}: { 
+  children: React.ReactNode
+  deployment: string 
+}) {
+  try {
+    const { ConvexProvider, ConvexReactClient } = require("convex/react")
+    const convex = new ConvexReactClient(deployment)
+    return <ConvexProvider client={convex}>{children}</ConvexProvider>
+  } catch (e) {
+    return <>{children}</>
+  }
 }

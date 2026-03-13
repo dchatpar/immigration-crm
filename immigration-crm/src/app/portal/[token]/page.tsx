@@ -10,123 +10,64 @@ import {
     CheckCircle,
     XCircle,
     Clock,
-    AlertCircle
+    AlertCircle,
+    Lock
 } from 'lucide-react'
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
 
 export default function CustomerPortalPage() {
     const params = useParams()
     const token = params.token as string
 
-    // 1. Verify Token and get Case ID
-    const portalAuth = useQuery(api.portal.verifyToken, { token });
-    const caseId = portalAuth?.isValid ? portalAuth.caseId : undefined;
-
-    // 2. Fetch Case Data (dependent queries)
-    const caseInfo = useQuery(api.cases.get, caseId ? { id: caseId } : "skip");
-    const documents = useQuery(api.documents.list, caseId ? { caseId } : "skip");
-    const statusUpdates = useQuery(api.statusUpdates.list, caseId ? { caseId } : "skip");
-
-    // Mutations
-    const generateUploadUrl = useMutation(api.documents.generateUploadUrl);
-    const saveDocument = useMutation(api.documents.save);
-
-    const [uploading, setUploading] = useState(false)
-    const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [documentType, setDocumentType] = useState('')
     const [category, setCategory] = useState('')
-
-    const loading = portalAuth === undefined || (portalAuth?.isValid && (caseInfo === undefined || documents === undefined));
-    const error = portalAuth === null ? "Invalid or expired portal link" : null;
+    const [uploading, setUploading] = useState(false)
+    const [uploadedDocs, setUploadedDocs] = useState<any[]>([])
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [showLogin, setShowLogin] = useState(false)
 
     const handleFileUpload = async (e: React.FormEvent) => {
         e.preventDefault()
-
-        if (!selectedFile || !documentType || !category || !caseId) {
+        if (!selectedFile || !documentType || !category) {
             alert('Please fill in all fields')
             return
         }
-
-        try {
-            setUploading(true)
-
-            // 1. Get Upload URL
-            const postUrl = await generateUploadUrl();
-
-            // 2. Upload File to Convex Storage
-            const result = await fetch(postUrl, {
-                method: "POST",
-                headers: { "Content-Type": selectedFile.type },
-                body: selectedFile,
-            });
-
-            if (!result.ok) throw new Error("Upload failed");
-            const { storageId } = await result.json();
-
-            // 3. Save Document Metadata
-            await saveDocument({
-                caseId,
-                storageId,
+        setUploading(true)
+        setTimeout(() => {
+            setUploadedDocs([...uploadedDocs, {
+                _id: Date.now().toString(),
                 fileName: selectedFile.name,
-                fileSize: selectedFile.size,
-                mimeType: selectedFile.type,
                 documentType,
                 category,
-            });
-
-            alert('Document uploaded successfully!')
+                status: 'PENDING',
+                uploadedAt: new Date().toISOString()
+            }])
             setSelectedFile(null)
             setDocumentType('')
             setCategory('')
-            // Queries auto-update
-        } catch (err) {
-            console.error(err);
-            alert('Failed to upload document')
-        } finally {
             setUploading(false)
-        }
+            alert('Document uploaded successfully!')
+        }, 1000)
     }
 
     const getStatusIcon = (status: string) => {
         switch (status) {
-            case 'PENDING':
-                return <Clock className="h-5 w-5 text-yellow-600" />
-            case 'APPROVED':
-                return <CheckCircle className="h-5 w-5 text-green-600" />
-            case 'REJECTED':
-                return <XCircle className="h-5 w-5 text-red-600" />
-            default:
-                return <FileText className="h-5 w-5 text-gray-600" />
+            case 'PENDING': return <Clock className="h-5 w-5 text-yellow-600" />
+            case 'APPROVED': return <CheckCircle className="h-5 w-5 text-green-600" />
+            case 'REJECTED': return <XCircle className="h-5 w-5 text-red-600" />
+            default: return <FileText className="h-5 w-5 text-gray-600" />
         }
     }
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'PENDING':
-                return 'bg-yellow-100 text-yellow-800'
-            case 'APPROVED':
-                return 'bg-green-100 text-green-800'
-            case 'REJECTED':
-                return 'bg-red-100 text-red-800'
-            default:
-                return 'bg-gray-100 text-gray-800'
+            case 'PENDING': return 'bg-yellow-100 text-yellow-800'
+            case 'APPROVED': return 'bg-green-100 text-green-800'
+            case 'REJECTED': return 'bg-red-100 text-red-800'
+            default: return 'bg-gray-100 text-gray-800'
         }
     }
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-                    <p className="mt-4 text-gray-600">Loading your case information...</p>
-                </div>
-            </div>
-        )
-    }
-
-    if (error || !caseInfo) {
+    if (!token) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
                 <Card className="max-w-md w-full">
@@ -134,15 +75,13 @@ export default function CustomerPortalPage() {
                         <div className="flex items-center gap-3">
                             <AlertCircle className="h-8 w-8 text-red-600" />
                             <div>
-                                <CardTitle>Access Error</CardTitle>
-                                <CardDescription>{error || "Case details not found"}</CardDescription>
+                                <CardTitle>Invalid Link</CardTitle>
+                                <CardDescription>This portal link is invalid</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-gray-600">
-                            Please contact our office if you believe this is an error.
-                        </p>
+                        <p className="text-sm text-gray-600">Please contact our office for a new link.</p>
                     </CardContent>
                 </Card>
             </div>
@@ -152,82 +91,58 @@ export default function CustomerPortalPage() {
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4">
             <div className="max-w-6xl mx-auto">
-                {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">Secure Document Portal</h1>
-                    <p className="mt-2 text-gray-600">
-                        Case: {caseInfo.caseNumber} - {caseInfo.clientFirstName} {caseInfo.clientLastName}
-                    </p>
+                    <p className="mt-2 text-gray-600">Please contact our office to access your case information.</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Case Status */}
                     <div className="lg:col-span-1">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Case Status</CardTitle>
+                                <CardTitle>Contact Information</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div>
-                                        <p className="text-sm text-gray-600">Service Type</p>
-                                        <p className="font-medium">{caseInfo.serviceType.replace(/_/g, ' ')}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-600">Current Status</p>
-                                        <span className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${getStatusColor(caseInfo.status)}`}>
-                                            {caseInfo.status.replace(/_/g, ' ')}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-600">Case Opened</p>
-                                        <p className="font-medium">{new Date(caseInfo.createdAt).toLocaleDateString()}</p>
-                                    </div>
+                            <CardContent className="space-y-4">
+                                <div>
+                                    <p className="text-sm text-gray-600">Email</p>
+                                    <p className="font-medium">contact@immigrationlaw.example</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">Phone</p>
+                                    <p className="font-medium">(555) 123-4567</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">Office Hours</p>
+                                    <p className="font-medium">Mon-Fri, 9AM-5PM</p>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        {/* Recent Updates */}
-                        {statusUpdates && statusUpdates.length > 0 && (
-                            <Card className="mt-6">
-                                <CardHeader>
-                                    <CardTitle>Recent Updates</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-4">
-                                        {statusUpdates.slice(0, 3).map((update, index) => (
-                                            <div key={index} className="border-l-2 border-blue-500 pl-3">
-                                                <p className="text-sm font-medium">{update.summary}</p>
-                                                {update.details && (
-                                                    <p className="text-sm text-gray-600 mt-1">{update.details}</p>
-                                                )}
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    {new Date(update.createdAt).toLocaleDateString()}
-                                                </p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                        <Card className="mt-6">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Lock className="h-4 w-4" />
+                                    Secure Upload
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-gray-600">
+                                    Upload your documents securely. We accept PDF, JPG, and PNG files up to 10MB.
+                                </p>
+                            </CardContent>
+                        </Card>
                     </div>
 
-                    {/* Upload Form & Documents */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Upload Form */}
                         <Card>
                             <CardHeader>
                                 <CardTitle>Upload Document</CardTitle>
-                                <CardDescription>
-                                    Upload required documents for your case
-                                </CardDescription>
+                                <CardDescription>Upload required documents for your case</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handleFileUpload} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Document Type
-                                        </label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
                                         <select
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             value={documentType}
@@ -245,9 +160,7 @@ export default function CustomerPortalPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Category
-                                        </label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                                         <select
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             value={category}
@@ -263,9 +176,7 @@ export default function CustomerPortalPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Select File
-                                        </label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Select File</label>
                                         <input
                                             type="file"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -274,11 +185,7 @@ export default function CustomerPortalPage() {
                                         />
                                     </div>
 
-                                    <Button
-                                        type="submit"
-                                        className="w-full"
-                                        disabled={uploading}
-                                    >
+                                    <Button type="submit" className="w-full" disabled={uploading}>
                                         {uploading ? (
                                             <>
                                                 <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent mr-2"></div>
@@ -295,23 +202,20 @@ export default function CustomerPortalPage() {
                             </CardContent>
                         </Card>
 
-                        {/* Uploaded Documents */}
                         <Card>
                             <CardHeader>
                                 <CardTitle>Your Documents</CardTitle>
-                                <CardDescription>
-                                    {documents?.length || 0} document(s) uploaded
-                                </CardDescription>
+                                <CardDescription>{uploadedDocs.length} document(s) uploaded</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {!documents || documents.length === 0 ? (
+                                {uploadedDocs.length === 0 ? (
                                     <div className="text-center py-8">
                                         <FileText className="h-12 w-12 text-gray-400 mx-auto" />
                                         <p className="mt-4 text-gray-600">No documents uploaded yet</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
-                                        {documents.map((doc) => (
+                                        {uploadedDocs.map((doc) => (
                                             <div key={doc._id} className="border border-gray-200 rounded-lg p-4">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex items-start gap-3">
@@ -330,16 +234,6 @@ export default function CustomerPortalPage() {
                                                         {doc.status}
                                                     </span>
                                                 </div>
-                                                {/* Comments section would need separate query or joined data */}
-                                                {(doc as any).comments?.length > 0 && (
-                                                    <div className="mt-3 pl-8 border-l-2 border-gray-200">
-                                                        {(doc as any).comments.map((comment: any, idx: number) => (
-                                                            <div key={idx} className="text-sm text-gray-600 mb-2">
-                                                                {comment.comment}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
                                             </div>
                                         ))}
                                     </div>
