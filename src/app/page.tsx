@@ -196,19 +196,14 @@ export default function Home() {
             <div>
               <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Company</h4>
               <ul className="space-y-2">
-                <li><Link href="/about" className="text-gray-600 hover:text-gray-900">About</Link></li>
-                <li><Link href="/blog" className="text-gray-600 hover:text-gray-900">Blog</Link></li>
-                <li><Link href="/careers" className="text-gray-600 hover:text-gray-900">Careers</Link></li>
                 <li><Link href="/contact" className="text-gray-600 hover:text-gray-900">Contact</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Legal</h4>
               <ul className="space-y-2">
-                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Privacy Policy</Link></li>
-                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Terms of Service</Link></li>
-                <li><Link href="#" className="text-gray-600 hover:text-gray-900">Cookie Policy</Link></li>
-                <li><Link href="#" className="text-gray-600 hover:text-gray-900">GDPR</Link></li>
+                <li><span className="text-gray-500 cursor-not-allowed">Privacy Policy</span></li>
+                <li><span className="text-gray-500 cursor-not-allowed">Terms of Service</span></li>
               </ul>
             </div>
           </div>

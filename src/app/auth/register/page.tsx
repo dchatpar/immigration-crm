@@ -87,13 +87,13 @@ export default function RegisterPage() {
             />
             <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
               I agree to the{' '}
-              <Link href="/terms" className="text-blue-600 hover:text-blue-500">
+              <span className="text-blue-600 cursor-not-allowed">
                 Terms of Service
-              </Link>{' '}
+              </span>{' '}
               and{' '}
-              <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
+              <span className="text-blue-600 cursor-not-allowed">
                 Privacy Policy
-              </Link>
+              </span>
             </label>
           </div>
 

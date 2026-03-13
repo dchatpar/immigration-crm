@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { useToast } from '@/components/ui/Toast'
 import { Save, RefreshCw, Settings as SettingsIcon } from 'lucide-react'
 
 interface Setting {
@@ -22,6 +23,7 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [editedSettings, setEditedSettings] = useState<Record<string, string>>({})
+    const { addToast } = useToast()
 
     useEffect(() => {
         fetchSettings()
@@ -67,9 +69,9 @@ export default function SettingsPage() {
             })
 
             await Promise.all(promises)
-            alert('Settings saved successfully')
+            addToast({ type: 'success', message: 'Settings saved successfully' })
         } catch (error) {
-            alert('Failed to save settings')
+            addToast({ type: 'error', message: 'Failed to save settings' })
         } finally {
             setSaving(false)
         }
