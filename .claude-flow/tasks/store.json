@@ -1,0 +1,18 @@
+{
+  "tasks": {
+    "task-1771540244033-dr9l7o": {
+      "taskId": "task-1771540244033-dr9l7o",
+      "type": "implementation",
+      "description": "Test swarm task - print hello",
+      "priority": "normal",
+      "status": "pending",
+      "progress": 0,
+      "assignedTo": [],
+      "tags": [],
+      "createdAt": "2026-02-19T22:30:44.033Z",
+      "startedAt": null,
+      "completedAt": null
+    }
+  },
+  "version": "3.0.0"
+}

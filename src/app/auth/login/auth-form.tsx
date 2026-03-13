@@ -22,21 +22,44 @@ export default function AuthForm() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   }
 
-  const handleOneClickLogin = async () => {
-    const adminEmail = 'admin@example.com'
-    const adminPassword = 'admin123'
+  const handleDemoLogin = async () => {
+    setLoading(true)
+    setError('')
     
-    setEmail(adminEmail)
-    setPassword(adminPassword)
-    
-    // Small delay to let state update, then submit
-    setTimeout(async () => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: 'demo@immigrationcrm.com', 
+          password: 'demo123',
+          demo: true 
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        localStorage.setItem('isLoggedIn', 'true')
+        localStorage.setItem('userEmail', data.user.email)
+        localStorage.setItem('userName', data.user.name)
+        localStorage.setItem('userRole', data.user.role)
+        localStorage.setItem('userId', data.user.id)
+        router.push('/dashboard')
+      } else {
+        setError(data.error || 'Login failed')
+      }
+    } catch (err) {
+      // Fallback to localStorage if API unavailable
       localStorage.setItem('isLoggedIn', 'true')
-      localStorage.setItem('userEmail', adminEmail)
-      localStorage.setItem('userName', 'Demo Admin')
+      localStorage.setItem('userEmail', 'demo@immigrationcrm.com')
+      localStorage.setItem('userName', 'Demo User')
       localStorage.setItem('userRole', 'ADMIN')
+      localStorage.setItem('userId', 'demo-user-1')
       router.push('/dashboard')
-    }, 100)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,15 +79,41 @@ export default function AuthForm() {
       return
     }
 
-    if (email === 'admin@example.com' && password === 'admin123') {
-      localStorage.setItem('isLoggedIn', 'true')
-      localStorage.setItem('userEmail', email)
-      localStorage.setItem('userName', 'Demo Admin')
-      localStorage.setItem('userRole', 'ADMIN')
-      router.push('/dashboard')
-    } else {
-      setError('Invalid email or password')
-      setLoading(false)
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, rememberMe })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        localStorage.setItem('isLoggedIn', 'true')
+        localStorage.setItem('userEmail', data.user.email)
+        localStorage.setItem('userName', data.user.name)
+        localStorage.setItem('userRole', data.user.role)
+        localStorage.setItem('userId', data.user.id)
+        
+        // Use replace to avoid back button going back to login
+        router.replace('/dashboard')
+      } else {
+        setError(data.error || 'Invalid email or password')
+        setLoading(false)
+      }
+    } catch (err) {
+      // Fallback: check against demo credentials locally
+      if (email === 'demo@immigrationcrm.com' && password === 'demo123') {
+        localStorage.setItem('isLoggedIn', 'true')
+        localStorage.setItem('userEmail', email)
+        localStorage.setItem('userName', 'Demo User')
+        localStorage.setItem('userRole', 'ADMIN')
+        localStorage.setItem('userId', 'demo-user-1')
+        router.replace('/dashboard')
+      } else {
+        setError('Invalid email or password')
+        setLoading(false)
+      }
     }
   }
 
@@ -106,6 +155,7 @@ export default function AuthForm() {
                   onBlur={() => setEmailFocused(false)}
                   placeholder="you@example.com"
                   className="pl-10 bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                  disabled={loading}
                 />
                 {email.length > 0 && isValidEmail(email) && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -135,6 +185,7 @@ export default function AuthForm() {
                   onBlur={() => setPasswordFocused(false)}
                   placeholder="••••••••"
                   className="pl-10 bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -148,6 +199,7 @@ export default function AuthForm() {
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="sr-only"
+                  disabled={loading}
                 />
                 <div className={`w-4 h-4 rounded border transition-all duration-200 flex items-center justify-center ${rememberMe ? 'bg-blue-500 border-blue-500' : 'border-gray-400 group-hover:border-gray-500'}`}>
                   {rememberMe && (
@@ -166,12 +218,21 @@ export default function AuthForm() {
 
           <Button
             type="button"
-            onClick={handleOneClickLogin}
+            onClick={handleDemoLogin}
             variant="outline"
-            className="w-full h-11 border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium transition-all duration-300"
+            disabled={loading}
+            className="w-full h-11 border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium transition-all duration-300 disabled:opacity-50"
           >
-            Quick Demo Login
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading...
+              </span>
+            ) : (
+              'Quick Demo Login'
+            )}
           </Button>
+          
           <Button
             type="submit"
             disabled={loading}
@@ -188,7 +249,7 @@ export default function AuthForm() {
           </Button>
           
           <p className="text-center text-sm text-gray-500">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/auth/register" className="text-blue-600 hover:text-blue-700 font-medium">
               Create one
             </Link>

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { useState, useEffect, useCallback } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import {
@@ -12,13 +12,15 @@ import {
     Calendar,
     FileText,
     TrendingUp,
-    Clock
+    Clock,
+    Loader2,
+    AlertCircle,
+    MoreVertical
 } from 'lucide-react'
 import Link from 'next/link'
 
 interface Case {
     _id: string
-    id?: string
     caseNumber: string
     clientFirstName: string
     clientLastName: string
@@ -28,10 +30,6 @@ interface Case {
     priority: string
     serviceType: string
     tier: string
-    assignedTo?: {
-        id: string
-        name: string
-    }
     createdAt: number
     updatedAt: number
     _count: {
@@ -42,30 +40,49 @@ interface Case {
 }
 
 export default function CasesPage() {
-    const mockCases = [
-        { _id: '1', caseNumber: 'IMM-2026-001', clientFirstName: 'John', clientLastName: 'Smith', clientEmail: 'john@example.com', clientPhone: '555-0101', status: 'IN_PROGRESS', priority: 'high', serviceType: 'WORK_PERMIT', tier: 'premium', createdAt: Date.now(), updatedAt: Date.now(), _count: { documents: 5, appointments: 2, communications: 3 } },
-        { _id: '2', caseNumber: 'IMM-2026-002', clientFirstName: 'Maria', clientLastName: 'Garcia', clientEmail: 'maria@example.com', clientPhone: '555-0102', status: 'INITIATED', priority: 'medium', serviceType: 'VISA_APPLICATION', tier: 'standard', createdAt: Date.now(), updatedAt: Date.now(), _count: { documents: 3, appointments: 1, communications: 1 } },
-        { _id: '3', caseNumber: 'IMM-2026-003', clientFirstName: 'Ahmed', clientLastName: 'Hassan', clientEmail: 'ahmed@example.com', clientPhone: '555-0103', status: 'APPROVED', priority: 'low', serviceType: 'CITIZENSHIP', tier: 'premium', createdAt: Date.now(), updatedAt: Date.now(), _count: { documents: 8, appointments: 4, communications: 6 } },
-        { _id: '4', caseNumber: 'IMM-2026-004', clientFirstName: 'Sarah', clientLastName: 'Johnson', clientEmail: 'sarah@example.com', clientPhone: '555-0104', status: 'UNDER_REVIEW', priority: 'high', serviceType: 'GREEN_CARD', tier: 'standard', createdAt: Date.now(), updatedAt: Date.now(), _count: { documents: 6, appointments: 3, communications: 4 } },
-        { _id: '5', caseNumber: 'IMM-2026-005', clientFirstName: 'Carlos', clientLastName: 'Rodriguez', clientEmail: 'carlos@example.com', clientPhone: '555-0105', status: 'DOCUMENTS_PENDING', priority: 'medium', serviceType: 'WORK_PERMIT', tier: 'basic', createdAt: Date.now(), updatedAt: Date.now(), _count: { documents: 2, appointments: 1, communications: 2 } },
-    ]
-    const cases = mockCases
-    const loading = false
+    const [cases, setCases] = useState<Case[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
     const [searchTerm, setSearchTerm] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
 
-    const filteredCases = cases.filter(c => {
-        const matchesSearch = searchTerm === '' ||
-            c.caseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.clientFirstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.clientLastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.clientEmail.toLowerCase().includes(searchTerm.toLowerCase())
+    const fetchCases = useCallback(async () => {
+        try {
+            setLoading(true)
+            setError(null)
+            
+            const params = new URLSearchParams()
+            if (statusFilter !== 'all') params.set('status', statusFilter)
+            if (debouncedSearch) params.set('search', debouncedSearch)
+            
+            const response = await fetch(`/api/cases?${params}`)
+            const data = await response.json()
+            
+            if (data.success) {
+                setCases(data.data)
+            } else {
+                setError(data.error || 'Failed to load cases')
+            }
+        } catch (err) {
+            setError('Failed to connect to server')
+            console.error('Error fetching cases:', err)
+        } finally {
+            setLoading(false)
+        }
+    }, [statusFilter, debouncedSearch])
 
-        const matchesStatus = statusFilter === 'all' || c.status === statusFilter
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm)
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [searchTerm])
 
-        return matchesSearch && matchesStatus
-    })
+    useEffect(() => {
+        fetchCases()
+    }, [fetchCases])
 
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
@@ -81,194 +98,139 @@ export default function CasesPage() {
         return colors[status] || 'bg-gray-100 text-gray-800'
     }
 
+    const getPriorityColor = (priority: string) => {
+        switch (priority) {
+            case 'HIGH': return 'text-red-600'
+            case 'MEDIUM': return 'text-yellow-600'
+            case 'LOW': return 'text-green-600'
+            default: return 'text-gray-600'
+        }
+    }
+
+    const filteredCases = cases.filter(c => {
+        const matchesSearch = !debouncedSearch ||
+            c.caseNumber.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+            c.clientFirstName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+            c.clientLastName.toLowerCase().includes(debouncedSearch.toLowerCase())
+
+        const matchesStatus = statusFilter === 'all' || c.status === statusFilter
+
+        return matchesSearch && matchesStatus
+    })
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px]">
+                <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Cases</h2>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <Button onClick={fetchCases}>
+                    <Loader2 className="h-4 w-4 mr-2" />
+                    Try Again
+                </Button>
+            </div>
+        )
+    }
+
     return (
-    <>
-      {/* Page Header */}
-            <div className="mb-8">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Cases</h1>
-                        <p className="mt-2 text-gray-600">
-                            Manage immigration cases and track progress
-                        </p>
-                    </div>
-                    <Link href="/dashboard/cases/new">
-                        <Button className="flex items-center gap-2">
-                            <Plus className="h-4 w-4" />
-                            New Case
-                        </Button>
-                    </Link>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Cases</h1>
+                    <p className="mt-2 text-gray-600">Manage immigration cases and track progress</p>
                 </div>
+                <Link href="/dashboard/cases/new">
+                    <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Case
+                    </Button>
+                </Link>
             </div>
 
-            {/* Filters */}
-            <Card className="mb-8">
+            <Card>
                 <CardContent className="pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="md:col-span-2">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                                <Input
-                                    type="text"
-                                    placeholder="Search by case number, client name, or email..."
-                                    className="pl-10"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                                placeholder="Search cases..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10"
+                            />
                         </div>
-                        <div>
-                            <select
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                            >
-                                <option value="all">All Statuses</option>
-                                <option value="INITIATED">Initiated</option>
-                                <option value="DOCUMENTS_PENDING">Documents Pending</option>
-                                <option value="UNDER_REVIEW">Under Review</option>
-                                <option value="APPLICATION_SUBMITTED">Application Submitted</option>
-                                <option value="IN_PROGRESS">In Progress</option>
-                                <option value="APPROVED">Approved</option>
-                                <option value="COMPLETED">Completed</option>
-                            </select>
-                        </div>
+                        <select
+                            className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                            <option value="all">All Statuses</option>
+                            <option value="INITIATED">Initiated</option>
+                            <option value="DOCUMENTS_PENDING">Documents Pending</option>
+                            <option value="UNDER_REVIEW">Under Review</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="APPROVED">Approved</option>
+                            <option value="COMPLETED">Completed</option>
+                        </select>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Total Cases</p>
-                                <p className="text-2xl font-bold">{cases.length}</p>
-                            </div>
-                            <Briefcase className="h-8 w-8 text-blue-600" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Active Cases</p>
-                                <p className="text-2xl font-bold">
-                                    {cases.filter(c => ['INITIATED', 'DOCUMENTS_PENDING', 'UNDER_REVIEW', 'IN_PROGRESS'].includes(c.status)).length}
-                                </p>
-                            </div>
-                            <Clock className="h-8 w-8 text-orange-600" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Completed</p>
-                                <p className="text-2xl font-bold">
-                                    {cases.filter(c => c.status === 'COMPLETED').length}
-                                </p>
-                            </div>
-                            <TrendingUp className="h-8 w-8 text-green-600" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">This Month</p>
-                                <p className="text-2xl font-bold">
-                                    {cases.filter(c => new Date(c.createdAt).getMonth() === new Date().getMonth()).length}
-                                </p>
-                            </div>
-                            <Calendar className="h-8 w-8 text-purple-600" />
-                        </div>
-                    </CardContent>
-                </Card>
+            {loading ? (
+                <div className="flex items-center justify-center min-h-[300px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                </div>
+            ) : filteredCases.length === 0 ? (
+                <div className="flex flex-col items-center justify-center min-h-[300px]">
+                    <Briefcase className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900">No Cases Found</h3>
+                    <p className="text-gray-500 mt-1">Try adjusting your filters or create a new case.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredCases.map((caseItem) => (
+                        <Link key={caseItem._id} href={`/dashboard/cases/${caseItem._id}`}>
+                            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                                <CardHeader className="pb-2">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <CardTitle className="text-lg">{caseItem.caseNumber}</CardTitle>
+                                            <p className="text-sm text-gray-500">
+                                                {caseItem.clientFirstName} {caseItem.clientLastName}
+                                            </p>
+                                        </div>
+                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(caseItem.status)}`}>
+                                            {caseItem.status.replace(/_/g, ' ')}
+                                        </span>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-500">Service</span>
+                                            <span className="font-medium">{caseItem.serviceType.replace(/_/g, ' ')}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-500">Priority</span>
+                                            <span className={`font-medium ${getPriorityColor(caseItem.priority)}`}>
+                                                {caseItem.priority}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-500">Documents</span>
+                                            <span className="font-medium">{caseItem._count?.documents || 0}</span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    ))}
+                </div>
+            )}
+
+            <div className="text-sm text-gray-500 text-center">
+                Showing {filteredCases.length} of {cases.length} cases
             </div>
-
-            {/* Cases List */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>All Cases</CardTitle>
-                    <CardDescription>
-                        Showing {filteredCases.length} of {cases.length} cases
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="text-center py-12">
-                            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-                            <p className="mt-4 text-gray-600">Loading cases...</p>
-                        </div>
-                    ) : filteredCases.length === 0 ? (
-                        <div className="text-center py-12">
-                            <Briefcase className="h-12 w-12 text-gray-400 mx-auto" />
-                            <h3 className="mt-4 text-lg font-medium text-gray-900">No cases found</h3>
-                            <p className="mt-2 text-gray-600">
-                                {searchTerm || statusFilter !== 'all'
-                                    ? 'Try adjusting your filters'
-                                    : 'Get started by creating a new case'}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredCases.map((caseItem) => (
-                                <Link key={caseItem._id} href={`/dashboard/cases/${caseItem._id}`}>
-                                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                                        <CardHeader>
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <CardTitle className="text-lg">{caseItem.caseNumber}</CardTitle>
-                                                    <CardDescription>
-                                                        {caseItem.clientFirstName} {caseItem.clientLastName}
-                                                    </CardDescription>
-                                                </div>
-                                                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(caseItem.status)}`}>
-                                                    {caseItem.status.replace(/_/g, ' ')}
-                                                </span>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="space-y-2">
-                                                <div className="flex items-center text-sm text-gray-600">
-                                                    <FileText className="h-4 w-4 mr-2" />
-                                                    <span>{caseItem.serviceType.replace(/_/g, ' ')}</span>
-                                                </div>
-                                                <div className="flex items-center text-sm text-gray-600">
-                                                    <span className="font-medium mr-2">Tier:</span>
-                                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
-                                                        {caseItem.tier}
-                                                    </span>
-                                                </div>
-                                                <div className="pt-3 border-t border-gray-200 grid grid-cols-3 gap-2 text-center">
-                                                    <div>
-                                                        <p className="text-xs text-gray-500">Docs</p>
-                                                        <p className="text-sm font-semibold">{caseItem._count.documents}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs text-gray-500">Appts</p>
-                                                        <p className="text-sm font-semibold">{caseItem._count.appointments}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs text-gray-500">Comms</p>
-                                                        <p className="text-sm font-semibold">{caseItem._count.communications}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                  </CardContent>
-              </Card>
-            </>
-
-        )
-    }
+        </div>
+    )
+}

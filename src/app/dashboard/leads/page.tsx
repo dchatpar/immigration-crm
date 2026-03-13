@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -16,13 +16,16 @@ import {
   Phone,
   Mail,
   Calendar,
-  ArrowUpDown
+  ArrowUpDown,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  XCircle
 } from 'lucide-react'
 import Link from 'next/link'
 
 interface Lead {
   _id: string
-  id?: string // for compatibility
   firstName: string
   lastName: string
   email?: string
@@ -39,29 +42,99 @@ interface Lead {
   capturedAt?: number
   updatedAt: number
   createdAt: number
-  _count: {
+  _count?: {
     notes: number
     activities: number
   }
 }
 
 export default function LeadsPage() {
-  const leads = [
-    { _id: '1', firstName: 'John', lastName: 'Smith', email: 'john@example.com', phone: '555-0101', source: 'Website', status: 'NEW', priority: 'high', capturedAt: Date.now(), updatedAt: Date.now(), createdAt: Date.now(), _creationTime: Date.now(), assignedTo: { id: '1', name: 'Admin', email: 'admin@example.com', role: 'admin' }, _count: { notes: 2, activities: 3 } },
-    { _id: '2', firstName: 'Maria', lastName: 'Garcia', email: 'maria@example.com', phone: '555-0102', source: 'Referral', status: 'CONTACTED', priority: 'medium', capturedAt: Date.now(), updatedAt: Date.now(), createdAt: Date.now(), _creationTime: Date.now(), assignedTo: null, _count: { notes: 1, activities: 2 } },
-    { _id: '3', firstName: 'Ahmed', lastName: 'Hassan', email: 'ahmed@example.com', phone: '555-0103', source: 'Website', status: 'QUALIFIED', priority: 'high', capturedAt: Date.now(), updatedAt: Date.now(), createdAt: Date.now(), _creationTime: Date.now(), assignedTo: { id: '1', name: 'Admin', email: 'admin@example.com', role: 'admin' }, _count: { notes: 3, activities: 5 } },
-    { _id: '4', firstName: 'Sarah', lastName: 'Johnson', email: 'sarah@example.com', phone: '555-0104', source: 'LinkedIn', status: 'APPOINTMENT_SCHEDULED', priority: 'low', capturedAt: Date.now(), updatedAt: Date.now(), createdAt: Date.now(), _creationTime: Date.now(), assignedTo: null, _count: { notes: 1, activities: 2 } },
-    { _id: '5', firstName: 'Carlos', lastName: 'Rodriguez', email: 'carlos@example.com', phone: '555-0105', source: 'Referral', status: 'CONVERTED', priority: 'medium', capturedAt: Date.now(), updatedAt: Date.now(), createdAt: Date.now(), _creationTime: Date.now(), assignedTo: { id: '1', name: 'Admin', email: 'admin@example.com', role: 'admin' }, _count: { notes: 4, activities: 6 } },
-  ]
-  const loading = false
-
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [sortField, setSortField] = useState('createdAt')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
-  const deleteLeadMutation = { mutate: (x: any) => console.log('Delete:', x) };
+  const fetchLeads = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const params = new URLSearchParams()
+      if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (priorityFilter !== 'all') params.set('priority', priorityFilter)
+      if (searchTerm) params.set('search', searchTerm)
+      
+      const response = await fetch(`/api/leads?${params}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setLeads(data.data)
+      } else {
+        setError(data.error || 'Failed to load leads')
+      }
+    } catch (err) {
+      setError('Failed to connect to server')
+      console.error('Error fetching leads:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [statusFilter, priorityFilter, searchTerm])
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      fetchLeads()
+    }, 300)
+    
+    return () => clearTimeout(debounceTimer)
+  }, [fetchLeads])
+
+  const handleDeleteLead = async (leadId: string) => {
+    if (!confirm('Are you sure you want to delete this lead?')) return
+    
+    try {
+      setDeleting(leadId)
+      const response = await fetch(`/api/leads?id=${leadId}`, { method: 'DELETE' })
+      const data = await response.json()
+      
+      if (data.success) {
+        setLeads(prev => prev.filter(l => l._id !== leadId))
+      } else {
+        alert(data.error || 'Failed to delete lead')
+      }
+    } catch (err) {
+      alert('Failed to delete lead')
+      console.error('Error deleting lead:', err)
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'NEW': return 'bg-blue-100 text-blue-800'
+      case 'CONTACTED': return 'bg-yellow-100 text-yellow-800'
+      case 'QUALIFIED': return 'bg-purple-100 text-purple-800'
+      case 'APPOINTMENT_SCHEDULED': return 'bg-orange-100 text-orange-800'
+      case 'CONVERTED': return 'bg-green-100 text-green-800'
+      case 'LOST': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'HIGH': return 'text-red-600'
+      case 'MEDIUM': return 'text-yellow-600'
+      case 'LOW': return 'text-green-600'
+      default: return 'text-gray-600'
+    }
+  }
 
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = searchTerm === '' ||
@@ -77,11 +150,9 @@ export default function LeadsPage() {
   })
 
   const sortedLeads = [...filteredLeads].sort((a, b) => {
-    // @ts-ignore
-    const aValue = a[sortField]
-    // @ts-ignore
-    const bValue = b[sortField]
-
+    const aValue = a[sortField as keyof Lead] as string | number
+    const bValue = b[sortField as keyof Lead] as string | number
+    
     if (sortDirection === 'asc') {
       return aValue > bValue ? 1 : -1
     } else {
@@ -89,102 +160,177 @@ export default function LeadsPage() {
     }
   })
 
-  const handleDeleteLead = async (leadId: string) => {
-    if (!confirm('Are you sure you want to delete this lead?')) return
-    console.log('Delete lead:', leadId)
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'NEW': return 'bg-blue-100 text-blue-800'
-      case 'CONTACTED': return 'bg-yellow-100 text-yellow-800'
-      case 'QUALIFIED': return 'bg-green-100 text-green-800'
-      case 'APPOINTMENT_SCHEDULED': return 'bg-purple-100 text-purple-800'
-      case 'CONVERTED': return 'bg-green-100 text-green-800'
-      case 'LOST': return 'bg-red-100 text-red-800'
-      case 'ARCHIVED': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'LOW': return 'bg-gray-100 text-gray-800'
-      case 'MEDIUM': return 'bg-blue-100 text-blue-800'
-      case 'HIGH': return 'bg-orange-100 text-orange-800'
-      case 'URGENT': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Leads</h2>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Button onClick={fetchLeads}>
+          <Loader2 className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    )
   }
 
   return (
-    <>
-      {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
-            <p className="mt-2 text-gray-600">
-              Manage and track your immigration leads
-            </p>
-          </div>
-          <Link href="/dashboard/leads/new">
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              New Lead
-            </Button>
-          </Link>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
+          <p className="mt-2 text-gray-600">Manage potential clients and track conversions</p>
         </div>
+        <Link href="/dashboard/leads/new">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Lead
+          </Button>
+        </Link>
       </div>
 
-      {/* Filters and Search */}
-      <Card className="mb-8">
+      <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <Input
-                  type="text"
-                  placeholder="Search leads by name, email, or phone..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search leads..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            <div>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="all">All Statuses</option>
-                <option value="NEW">New</option>
-                <option value="CONTACTED">Contacted</option>
-                <option value="QUALIFIED">Qualified</option>
-                <option value="APPOINTMENT_SCHEDULED">Appointment Scheduled</option>
-                <option value="CONVERTED">Converted</option>
-                <option value="LOST">Lost</option>
-                <option value="ARCHIVED">Archived</option>
-              </select>
-            </div>
-            <div>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-              >
-                <option value="all">All Priorities</option>
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-            </div>
+            <select
+              className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="NEW">New</option>
+              <option value="CONTACTED">Contacted</option>
+              <option value="QUALIFIED">Qualified</option>
+              <option value="APPOINTMENT_SCHEDULED">Appointment Scheduled</option>
+              <option value="CONVERTED">Converted</option>
+              <option value="LOST">Lost</option>
+            </select>
+            <select
+              className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+            >
+              <option value="all">All Priorities</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </div>
-          </CardContent>
+        </CardContent>
       </Card>
-    </>
-  );
+
+      {loading ? (
+        <div className="flex items-center justify-center min-h-[300px]">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      ) : sortedLeads.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[300px]">
+          <Users className="h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900">No Leads Found</h3>
+          <p className="text-gray-500 mt-1">Try adjusting your filters or add a new lead.</p>
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Contact</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Priority</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Source</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {sortedLeads.map((lead) => (
+                    <tr key={lead._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-blue-700 font-medium">
+                              {lead.firstName[0]}{lead.lastName[0]}
+                            </span>
+                          </div>
+                          <div className="ml-4">
+                            <p className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          {lead.email && (
+                            <p className="text-sm text-gray-600 flex items-center gap-2">
+                              <Mail className="h-3 w-3" /> {lead.email}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-600 flex items-center gap-2">
+                            <Phone className="h-3 w-3" /> {lead.phone}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead.status)}`}>
+                          {lead.status.replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-sm font-medium ${getPriorityColor(lead.priority)}`}>
+                          {lead.priority}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {lead.source}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Link href={`/dashboard/leads/${lead._id}`}>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteLead(lead._id)}
+                            disabled={deleting === lead._id}
+                          >
+                            {deleting === lead._id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="text-sm text-gray-500 text-center">
+        Showing {sortedLeads.length} of {leads.length} leads
+      </div>
+    </div>
+  )
 }

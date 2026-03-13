@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-02-20T00:10:34.051Z",
+  "projectRoot": "/root/development/apps/immigration",
+  "structure": {
+    "hasPackageJson": false,
+    "hasTsConfig": false,
+    "hasClaudeConfig": true,
+    "hasClaudeFlow": true
+  },
+  "scannedAt": 1771546234051
+}

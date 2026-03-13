@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   Folder,
   File,
-  Image,
+  ImageIcon,
   FileSpreadsheet,
   FilePlus
 } from 'lucide-react'
@@ -102,7 +102,7 @@ export default function VaultPage() {
 
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase()
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) return <Image className="h-8 w-8 text-purple-500" />
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) return <ImageIcon className="h-8 w-8 text-purple-500" />
     if (['xlsx', 'xls', 'csv'].includes(ext || '')) return <FileSpreadsheet className="h-8 w-8 text-green-500" />
     if (ext === 'pdf') return <FileText className="h-8 w-8 text-red-500" />
     return <File className="h-8 w-8 text-gray-500" />
